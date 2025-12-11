@@ -1,0 +1,64 @@
+// File: schema.prisma
+
+model User {
+  id              String         @id @default(cuid())
+  googleId        String?        @unique // Made optional for non-Google users
+  email           String         @unique
+  name            String?
+  passwordHash    String?        // NEW: Required for traditional login
+  
+  // RELATIONSHIP: Links to all messages/activities this user sent
+  chatMessages    ChatMessage[]
+  predictions     Prediction[]
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+// NEW MODEL: For storing chat history/user actions
+model ChatMessage {
+  id          String    @id @default(cuid())
+  
+  // Foreign Key linking to the User
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  
+  type        String    // e.g., "user_message", "bot_response", "file_upload"
+  content     String    // The actual text or action description
+  
+  timestamp   DateTime  @default(now())
+  
+  // You might want an index here for faster lookups
+  @@index([userId])
+}
+
+// NEW MODEL: For storing ECG prediction results
+model Prediction {
+  id                  String    @id @default(cuid())
+  
+  // Foreign Key linking to the User
+  userId              String
+  user                User      @relation(fields: [userId], references: [id])
+  
+  filename            String
+  prediction          String    // "Atrial Fibrillation Detected" or "Normal ECG"
+  confidence          Float
+  probabilityAf       Float
+  probabilityNormal   Float
+  csvData             String?   @db.Text // NEW: Store CSV data for visualization (first 1000 samples as JSON)
+  
+  createdAt           DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// --- Keep your existing datasource and generator blocks ---
+datasource db {
+  provider = "postgresql" // Or your provider
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
