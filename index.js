@@ -1229,6 +1229,9 @@ app.use((err, req, res, next) => {
     details: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
+app.get('/', (req, res) => {
+  res.send('✅ Backend is running successfully!');
+});
 
 // 404 handler - ensures unknown routes return JSON
 app.use((req, res) => {
