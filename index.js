@@ -467,9 +467,30 @@ const prisma = new PrismaClient();
 const PORT = process.env.SERVER_PORT || 5000;
 
 // --- Middleware Setup ---
+// Updated CORS Configuration
 app.use(cors({
-  origin: process.env.CLIENT_ORIGIN || 'http://localhost:3000',
-  credentials: true,
+  origin: function (origin, callback) {
+    // 1. Allow requests with no origin (like server-to-server calls or mobile apps)
+    if (!origin) return callback(null, true);
+
+    // 2. Allow specific allowed domains (Localhost + Production)
+    const allowedOrigins = [
+      process.env.CLIENT_ORIGIN, 
+      'http://localhost:3000'
+    ];
+    
+    // 3. CHECK: Is it a main domain OR a Cloudflare Preview?
+    // This Regex allows https://<anything>.mednet-frontend.pages.dev
+    const isPreview = origin.endsWith('.mednet-frontend.pages.dev') || origin.endsWith('.pages.dev');
+
+    if (allowedOrigins.indexOf(origin) !== -1 || isPreview) {
+      callback(null, true);
+    } else {
+      console.log("Blocked by CORS:", origin); // Helpful for debugging logs
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true, // Keep this true for cookies/sessions
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
