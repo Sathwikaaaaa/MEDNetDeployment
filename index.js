@@ -18,25 +18,28 @@ const PORT = process.env.SERVER_PORT || 5000;
 
 // --- Middleware Setup ---
 // Updated CORS Configuration
+// --- Middleware Setup ---
 app.use(cors({
   origin: function (origin, callback) {
     // 1. Allow requests with no origin (like server-to-server calls or mobile apps)
     if (!origin) return callback(null, true);
 
-    // 2. Allow specific allowed domains (Localhost + Production)
+    // 2. Define allowed base domains
     const allowedOrigins = [
       process.env.CLIENT_ORIGIN, 
-      'http://localhost:3000'
+      'http://localhost:3000',
+      'https://mednet-frontend.pages.dev'
     ];
     
-    // 3. CHECK: Is it a main domain OR a Cloudflare Preview?
-    // This Regex allows https://<anything>.mednet-frontend.pages.dev
-    const isPreview = origin.endsWith('.mednet-frontend.pages.dev') || origin.endsWith('.pages.dev');
+    // 3. Dynamic Check: Allow any URL ending in .pages.dev (Cloudflare)
+    // This covers https://8cab53f9.mednet-frontend.pages.dev and any future previews
+    const isCloudflare = origin.endsWith('.pages.dev');
+    const isAllowed = allowedOrigins.includes(origin);
 
-    if (allowedOrigins.indexOf(origin) !== -1 || isPreview) {
-      callback(null, true);
+    if (isAllowed || isCloudflare) {
+      callback(null, true); // Respond with the requested origin
     } else {
-      console.log("Blocked by CORS:", origin); // Helpful for debugging logs
+      console.log("Blocked by CORS:", origin); 
       callback(new Error('Not allowed by CORS'));
     }
   },
